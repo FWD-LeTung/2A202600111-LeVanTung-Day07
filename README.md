@@ -1,12 +1,8 @@
 # Ngày 7 — Nền Tảng Dữ Liệu: Embedding & Vector Store
 
-**Chương 2 | Ngày 7 trong 15**
-
 ---
 
 ## Mục Tiêu
-
-Hiểu các chiến lược chia nhỏ văn bản, tạo embedding, lưu trữ và tìm kiếm vector dùng vector database, và kết nối knowledge base với agent.
 
 Sau lab này, bạn cần có thể:
 - Giải thích cosine similarity và dự đoán điểm tương đồng giữa các văn bản
@@ -19,11 +15,11 @@ Sau lab này, bạn cần có thể:
 
 ## Cấu Trúc Lab: 2 Pha
 
-### Pha 1 — Cá Nhân: Hoàn Thành solution.py (2.5 giờ)
+### Pha 1 — Cá Nhân: Hoàn Thành solution.py
 
 Mỗi sinh viên **tự mình** hoàn thành tất cả TODO trong `template.py`. `Document` dataclass và `chunk_fixed_size` đã được implement sẵn làm ví dụ.
 
-### Pha 2 — Nhóm: So Sánh Retrieval Strategy (2.5 giờ)
+### Pha 2 — Nhóm: So Sánh Retrieval Strategy
 
 Nhóm cùng chọn một bộ tài liệu và thống nhất 5 benchmark queries. Mỗi thành viên **thử strategy riêng** (chunking, metadata), chạy cùng queries, rồi **so sánh kết quả trong nhóm** để học từ nhau.
 
@@ -46,22 +42,30 @@ cp .env.example .env
 ## Cấu Trúc Thư Mục
 
 ```
-Day-7-Lab-Embedding-Vector-Store/
 ├── README.md              ← Bạn đang đọc file này
 ├── exercises.md           ← Bài tập (4 phần)
 ├── template.py            ← Code khung (điền TODO)
 ├── solution/              ← Copy solution.py vào đây khi xong
-├── data/                  ← Đặt tài liệu nhóm (.txt/.md) vào đây
+├── data/                  ← Tài liệu mẫu + tài liệu nhóm (.txt/.md)
 ├── tests/
 │   └── test_solution.py   ← Test suite (30+ tests)
 ├── report/
-│   └── TEMPLATE_REPORT.md ← Báo cáo (1 file/sinh viên, gồm cả phần nhóm)
+│   └── TEMPLATE_REPORT.md ← Báo cáo (1 file/sinh viên)
 ├── SCORING.md             ← Tiêu chí chấm điểm
-├── EVALUATION.md          ← Giải thích các metrics
-├── INSTRUCTOR_GUIDE.md    ← Hướng dẫn giảng viên
-├── requirements.txt
-└── .env.example
+└── requirements.txt
 ```
+
+---
+
+## Các Giai Đoạn Lab
+
+| Giai Đoạn | Hoạt Động |
+|-----------|-----------|
+| Chuẩn bị tài liệu | Nhóm chọn domain, thu thập tài liệu, chuyển sang .md/.txt |
+| Lập trình cá nhân | Warm-up + implement tất cả TODO (cá nhân) |
+| Thiết kế strategy | Mỗi người thử strategy riêng, thống nhất 5 queries |
+| So sánh trong nhóm | Chạy benchmark, so sánh kết quả, chuẩn bị demo |
+| Demo & thảo luận | Trình bày strategy + so sánh, thảo luận liên nhóm |
 
 ---
 
@@ -88,18 +92,6 @@ Day-7-Lab-Embedding-Vector-Store/
 3. **Thống nhất 5 benchmark queries** kèm gold answers
 4. **Mỗi thành viên thử strategy riêng**: chunking method, tham số, metadata schema
 5. **So sánh kết quả trong nhóm**: strategy nào cho retrieval tốt hơn? Tại sao?
-
----
-
-## Hướng Dẫn Thời Gian Lab (4.5 giờ)
-
-| Giai Đoạn | Thời Gian | Hoạt Động |
-|-----------|-----------|-----------|
-| Chuẩn bị tài liệu | 0:00–0:30 | Nhóm chọn domain, thu thập tài liệu, chuyển sang .md/.txt |
-| Lập trình cá nhân | 0:30–2:00 | Warm-up + implement tất cả TODO (cá nhân) |
-| Thiết kế strategy | 2:00–3:00 | Mỗi người thử strategy riêng, thống nhất 5 queries |
-| So sánh trong nhóm | 3:00–3:30 | Chạy benchmark, so sánh kết quả, chuẩn bị demo |
-| Demo & thảo luận | 3:30–4:30 | Trình bày strategy + so sánh, thảo luận liên nhóm |
 
 ---
 
