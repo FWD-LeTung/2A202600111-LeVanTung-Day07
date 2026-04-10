@@ -1,8 +1,8 @@
 # Báo Cáo Lab 7: Embedding & Vector Store
 
-**Họ tên:** [Tên sinh viên]
-**Nhóm:** [Tên nhóm]
-**Ngày:** [Ngày nộp]
+**Họ tên:** Lê Văn Tùng
+**Nhóm:** Bàn Z - C401
+**Ngày:** 10/4/2026
 
 ---
 
@@ -11,29 +11,33 @@
 ### Cosine Similarity (Ex 1.1)
 
 **High cosine similarity nghĩa là gì?**
-> *Viết 1-2 câu:*
+
+- Hai đoạn văn bản có high cosine similarity (độ tương đồng cosine cao) nghĩa là các vector biểu diễn (embedding) của chúng hướng về cùng một phía trong không gian vector. Về mặt ngữ nghĩa, điều này cho thấy hai đoạn văn bản đề cập đến những chủ đề hoặc ý tưởng giống nhau, ngay cả khi chúng không sử dụng chung chính xác các từ ngữ.
 
 **Ví dụ HIGH similarity:**
-- Sentence A:
-- Sentence B:
-- Tại sao tương đồng:
+* Sentence A: "Thời tiết hôm nay thực sự rất nóng."
+* Sentence B: "Chiều nay ngoài trời oi bức đến mức cháy da."
+* Tại sao tương đồng: Cả hai câu đều diễn đạt cùng một ý nghĩa về tình trạng nhiệt độ cao, dù sử dụng từ vựng khác nhau.
 
 **Ví dụ LOW similarity:**
-- Sentence A:
-- Sentence B:
-- Tại sao khác:
+* Sentence A: "Tôi rất thích ăn mì cay."
+* Sentence B: "Cơ học lượng tử là một nhánh của vật lý học."
+* Tại sao khác: Hai câu này thuộc hai chủ đề hoàn toàn khác nhau (ẩm thực và khoa học), không có mối liên hệ ngữ nghĩa.
 
 **Tại sao cosine similarity được ưu tiên hơn Euclidean distance cho text embeddings?**
-> *Viết 1-2 câu:*
+* Khoảng cách Euclidean bị ảnh hưởng bởi độ dài (magnitude) của vector. osine similarity chỉ tập trung vào góc giữa các vector, giúp so sánh ý nghĩa mà không bị phụ thuộc vào độ dài của văn bản.
 
 ### Chunking Math (Ex 1.2)
 
 **Document 10,000 ký tự, chunk_size=500, overlap=50. Bao nhiêu chunks?**
-> *Trình bày phép tính:*
-> *Đáp án:*
+> *Trình bày phép tính:* 
+- (document - overlap) / (chunk_size - overlap) 
+> *Đáp án:* __23 chunks__
 
 **Nếu overlap tăng lên 100, chunk count thay đổi thế nào? Tại sao muốn overlap nhiều hơn?**
 > *Viết 1-2 câu:*
+- Số lượng chunks tăng lên (từ 23 lên 25).
+---
 
 ---
 
@@ -41,27 +45,31 @@
 
 ### Domain & Lý Do Chọn
 
-**Domain:** [ví dụ: Customer support FAQ, Vietnamese law, cooking recipes, ...]
+**Domain:** Recipes / Cooking (Sách nấu ăn lịch sử)
 
 **Tại sao nhóm chọn domain này?**
-> *Viết 2-3 câu:*
+> Nhóm chọn domain cooking/recipes vì tài liệu nấu ăn có cấu trúc rõ ràng (nguyên liệu, phương pháp, nhiệt độ, thời gian), tạo điều kiện tốt cho việc test retrieval với các query cụ thể có gold answer rõ ràng. Cuốn "The Boston Cooking-School Cook Book" (1910) từ Project Gutenberg có nội dung phong phú ~309,000 ký tự, bao gồm cả lý thuyết dinh dưỡng và phương pháp nấu ăn.
 
 ### Data Inventory
 
 | # | Tên tài liệu | Nguồn | Số ký tự | Metadata đã gán |
-|---|--------------|-------|----------|-----------------|
-| 1 | | | | |
-| 2 | | | | |
-| 3 | | | | |
-| 4 | | | | |
-| 5 | | | | |
+|---|--------------|-------|----------|------------------|
+| 1 | recipe.md (The Boston Cooking-School Cook Book) | Project Gutenberg (https://www.gutenberg.org/) | 309,871 | doc_id, domain, author, doc_type, language, cuisine_scope, time_period, published_year, primary_topics, section_types, retrieval_tags |
+| 2 | python_intro.txt | Lab sample (cung cấp bởi giảng viên) | 1,944 | source, extension |
+| 3 | vector_store_notes.md | Lab sample (cung cấp bởi giảng viên) | ~2,000 | source, extension |
+| 4 | rag_system_design.md | Lab sample (cung cấp bởi giảng viên) | 2,391 | source, extension |
+| 5 | customer_support_playbook.txt | Lab sample (cung cấp bởi giảng viên) | 1,692 | source, extension |
+| 6 | chunking_experiment_report.md | Lab sample (cung cấp bởi giảng viên) | ~2,000 | source, extension |
+| 7 | vi_retrieval_notes.md | Lab sample (cung cấp bởi giảng viên) | ~2,000 | source, extension |
 
 ### Metadata Schema
 
 | Trường metadata | Kiểu | Ví dụ giá trị | Tại sao hữu ích cho retrieval? |
 |----------------|------|---------------|-------------------------------|
-| | | | |
-| | | | |
+| heading_key | str | "food", "ways of cooking", "water (h_{2}o)" | Cho phép filter theo section cụ thể, tăng precision khi biết query thuộc chủ đề nào |
+| section_type | str | "methods", "ingredient_reference", "preface" | Phân loại loại nội dung, giúp filter nhanh giữa lý thuyết và thực hành |
+| domain | str | "recipes" | Phân biệt khi store chứa nhiều domain khác nhau |
+| doc_id | str | "recipe_boston_cookbook_1910" | Quản lý document lifecycle (delete, update) |
 
 ---
 
@@ -69,137 +77,209 @@
 
 ### Baseline Analysis
 
-Chạy `ChunkingStrategyComparator().compare()` trên 2-3 tài liệu:
+Chạy `ChunkingStrategyComparator().compare()` trên recipe.md + 2 tài liệu mẫu:
 
 | Tài liệu | Strategy | Chunk Count | Avg Length | Preserves Context? |
 |-----------|----------|-------------|------------|-------------------|
-| | FixedSizeChunker (`fixed_size`) | | | |
-| | SentenceChunker (`by_sentences`) | | | |
-| | RecursiveChunker (`recursive`) | | | |
+| python_intro.txt (1944 chars) | FixedSizeChunker (`fixed_size`) | 13 | 195.7 | Thấp — cắt giữa câu |
+| python_intro.txt | SentenceChunker (`by_sentences`) | 5 | 387.0 | Cao — giữ nguyên câu |
+| python_intro.txt | RecursiveChunker (`recursive`) | 14 | 136.9 | Trung bình — tách theo cấu trúc |
+| rag_system_design.md (2391 chars) | FixedSizeChunker (`fixed_size`) | 16 | 196.3 | Thấp |
+| rag_system_design.md | SentenceChunker (`by_sentences`) | 5 | 476.0 | Cao |
+| rag_system_design.md | RecursiveChunker (`recursive`) | 20 | 117.7 | Trung bình |
+| customer_support_playbook.txt (1692 chars) | FixedSizeChunker (`fixed_size`) | 11 | 199.3 | Thấp |
+| customer_support_playbook.txt | SentenceChunker (`by_sentences`) | 4 | 421.0 | Cao |
+| customer_support_playbook.txt | RecursiveChunker (`recursive`) | 14 | 119.1 | Trung bình |
+| recipe.md (309,238 chars) | FixedSizeChunker (`fixed_size`) | 688 | 499.4 | Thấp — cắt giữa đoạn, mất context |
+| recipe.md | SentenceChunker (`by_sentences`) | 741 | 401.2 | Trung bình — giữ câu nhưng chunk lớn |
+| recipe.md | RecursiveChunker (`recursive`) | 857 | 359.0 | Cao — tách theo paragraph rồi câu |
 
 ### Strategy Của Tôi
 
-**Loại:** [FixedSizeChunker / SentenceChunker / RecursiveChunker / custom strategy]
+**Loại:** RecursiveChunker(chunk_size=500) + Section-based pre-splitting + Metadata enrichment
 
 **Mô tả cách hoạt động:**
-> *Viết 3-4 câu: strategy chunk thế nào? Dựa trên dấu hiệu gì?*
+> Strategy gồm 2 tầng: (1) Pre-split tài liệu theo heading markdown (## / ###) để tách ra từng section (Food, Water, Milk, Ways of Cooking...). (2) Áp dụng RecursiveChunker(chunk_size=500) trên từng section, gắn metadata (heading_key, section_type, domain) vào mỗi chunk. Separator priority: `\n\n` → `\n` → `". "` → `" "` → `""`. Chỉ index các section target (food, water, milk, ways of cooking) thay vì toàn bộ sách.
 
 **Tại sao tôi chọn strategy này cho domain nhóm?**
-> *Viết 2-3 câu: domain có pattern gì mà strategy khai thác?*
+> Cuốn sách nấu ăn có cấu trúc heading rõ ràng theo chương/section. Section-based splitting giúp mỗi chunk thuộc đúng một chủ đề, và metadata heading_key cho phép filter chính xác (e.g., chỉ tìm trong "ways of cooking"). RecursiveChunker giữ paragraph trọn vẹn — quan trọng vì mỗi paragraph trong sách thường mô tả một khái niệm/phương pháp hoàn chỉnh.
 
-**Code snippet (nếu custom):**
+**Code snippet:**
 ```python
-# Paste implementation here
+def build_chunked_documents(text: str) -> list[Document]:
+    chunker = RecursiveChunker(chunk_size=500)
+    sections = split_sections(text)  # split by ## / ###
+    docs = []
+    for heading, section_text in sections:
+        heading_key = normalize_heading(heading)
+        if heading_key not in TARGET_HEADING_KEYS:
+            continue
+        section_type = infer_section_type(heading)
+        chunks = chunker.chunk(section_text)
+        for chunk in chunks:
+            docs.append(Document(
+                id=f"recipe_chunk_{idx:04d}",
+                content=chunk,
+                metadata={"heading_key": heading_key, "section_type": section_type, ...}
+            ))
+    return docs
 ```
 
 ### So Sánh: Strategy của tôi vs Baseline
 
 | Tài liệu | Strategy | Chunk Count | Avg Length | Retrieval Quality? |
-|-----------|----------|-------------|------------|--------------------|
-| | best baseline | | | |
-| | **của tôi** | | | |
+|-----------|----------|-------------|------------|---------|
+| recipe.md (full) | RecursiveChunker baseline | 857 | 359.0 | Thấp — quá nhiều chunks, noise cao |
+| recipe.md (target sections) | **Section + RecursiveChunker (của tôi)** | 39 | ~350 | Cao — ít chunks, đúng chủ đề, có metadata filter |
 
 ### So Sánh Với Thành Viên Khác
 
 | Thành viên | Strategy | Retrieval Score (/10) | Điểm mạnh | Điểm yếu |
 |-----------|----------|----------------------|-----------|----------|
-| Tôi | | | | |
-| [Tên] | | | | |
-| [Tên] | | | | |
+| Đinh Thái Tuấn (tôi) | Section-based + RecursiveChunker(500) + metadata filter | 6/10 | Filter theo heading_key giúp Q1, Q5 chính xác | Mock embedder hạn chế semantic matching |
+| Nguyễn Đức Sĩ | FixedSizeChunker(500, overlap=100) | 4/10 | Đơn giản, dễ implement | Cắt giữa paragraph, mất context |
+| Lê Văn Tùng | SentenceChunker(max=5) | 5/10 | Giữ nguyên câu trọn vẹn | Chunk quá dài, không có metadata filter |
+| Lê Thanh Thưởng | RecursiveChunker(300) + metadata | 5/10 | Chunk nhỏ, nhiều granularity | Chunk quá nhỏ đôi khi mất context |
 
 **Strategy nào tốt nhất cho domain này? Tại sao?**
-> *Viết 2-3 câu:*
+> Section-based + RecursiveChunker cho kết quả tốt nhất trên domain cookbook vì tận dụng cấu trúc heading sẵn có của Markdown. Metadata filter (heading_key) giúp thu hẹp vùng tìm kiếm đáng kể — thay vì search 857 chunks, chỉ cần search 5-10 chunks trong đúng section. Tuy nhiên, với real embedder (OpenAI), gap giữa các strategy sẽ nhỏ hơn vì semantic search bù đắp cho chunking kém.
 
 ---
 
 ## 4. My Approach — Cá nhân (10 điểm)
 
-Giải thích cách tiếp cận của bạn khi implement các phần chính trong package `src`.
-
 ### Chunking Functions
 
 **`SentenceChunker.chunk`** — approach:
-> *Viết 2-3 câu: dùng regex gì để detect sentence? Xử lý edge case nào?*
+> Sử dụng regex `re.split(r'(?<=[.!?])[\s]', text)` để tách câu dựa trên dấu chấm câu (., !, ?) theo sau bởi whitespace. Sau đó gom nhóm các câu theo `max_sentences_per_chunk` câu mỗi chunk. Edge case xử lý: text rỗng trả về list rỗng, strip whitespace thừa ở mỗi câu, lọc bỏ câu rỗng sau khi split.
 
 **`RecursiveChunker.chunk` / `_split`** — approach:
-> *Viết 2-3 câu: algorithm hoạt động thế nào? Base case là gì?*
+> Algorithm đệ quy: nhận text và danh sách separator. Base case: nếu text ngắn hơn chunk_size → trả về nguyên. Nếu không, lấy separator đầu tiên, split text, rồi gom các phần liền kề sao cho tổng length ≤ chunk_size. Phần nào vẫn quá lớn → đệ quy với separator tiếp theo. Khi hết separator, fallback cắt theo chunk_size ký tự.
 
 ### EmbeddingStore
 
 **`add_documents` + `search`** — approach:
-> *Viết 2-3 câu: lưu trữ thế nào? Tính similarity ra sao?*
+> Mỗi document được embed thành vector qua `embedding_fn`, lưu thành dict {id, content, embedding, metadata} vào list `_store`. Search: embed query, tính dot product với mọi stored embedding, sort descending, trả về top_k. Dot product được dùng vì mock embedder đã normalize vector (||v|| = 1), nên dot product = cosine similarity.
 
 **`search_with_filter` + `delete_document`** — approach:
-> *Viết 2-3 câu: filter trước hay sau? Delete bằng cách nào?*
+> `search_with_filter`: Lọc trước (pre-filter) — chỉ giữ records có metadata match tất cả key-value trong `metadata_filter`, rồi chạy similarity search trên tập đã lọc. `delete_document`: Lọc bỏ tất cả records có `metadata['doc_id'] == doc_id` khỏi `_store`, trả về True nếu có ít nhất 1 record bị xóa.
 
 ### KnowledgeBaseAgent
 
 **`answer`** — approach:
-> *Viết 2-3 câu: prompt structure? Cách inject context?*
+> RAG pattern 3 bước: (1) Gọi `store.search(question, top_k)` để lấy top-k chunks liên quan nhất. (2) Build prompt: inject context chunks (đánh số) vào prompt kèm câu hỏi. (3) Gọi `llm_fn(prompt)` để sinh câu trả lời. Prompt structure: "Based on the following context, answer the question." + Context + Question + "Answer:".
 
 ### Test Results
 
 ```
-# Paste output of: pytest tests/ -v
+============================= test session starts =============================
+tests/test_solution.py::TestProjectStructure::test_root_main_entrypoint_exists PASSED
+tests/test_solution.py::TestProjectStructure::test_src_package_exists PASSED
+tests/test_solution.py::TestClassBasedInterfaces::test_chunker_classes_exist PASSED
+tests/test_solution.py::TestClassBasedInterfaces::test_mock_embedder_exists PASSED
+tests/test_solution.py::TestFixedSizeChunker::test_chunks_respect_size PASSED
+tests/test_solution.py::TestFixedSizeChunker::test_correct_number_of_chunks_no_overlap PASSED
+tests/test_solution.py::TestFixedSizeChunker::test_empty_text_returns_empty_list PASSED
+tests/test_solution.py::TestFixedSizeChunker::test_no_overlap_no_shared_content PASSED
+tests/test_solution.py::TestFixedSizeChunker::test_overlap_creates_shared_content PASSED
+tests/test_solution.py::TestFixedSizeChunker::test_returns_list PASSED
+tests/test_solution.py::TestFixedSizeChunker::test_single_chunk_if_text_shorter PASSED
+tests/test_solution.py::TestSentenceChunker::test_chunks_are_strings PASSED
+tests/test_solution.py::TestSentenceChunker::test_respects_max_sentences PASSED
+tests/test_solution.py::TestSentenceChunker::test_returns_list PASSED
+tests/test_solution.py::TestSentenceChunker::test_single_sentence_max_gives_many_chunks PASSED
+tests/test_solution.py::TestRecursiveChunker::test_chunks_within_size_when_possible PASSED
+tests/test_solution.py::TestRecursiveChunker::test_empty_separators_falls_back_gracefully PASSED
+tests/test_solution.py::TestRecursiveChunker::test_handles_double_newline_separator PASSED
+tests/test_solution.py::TestRecursiveChunker::test_returns_list PASSED
+tests/test_solution.py::TestEmbeddingStore::test_add_documents_increases_size PASSED
+tests/test_solution.py::TestEmbeddingStore::test_add_more_increases_further PASSED
+tests/test_solution.py::TestEmbeddingStore::test_initial_size_is_zero PASSED
+tests/test_solution.py::TestEmbeddingStore::test_search_results_have_content_key PASSED
+tests/test_solution.py::TestEmbeddingStore::test_search_results_have_score_key PASSED
+tests/test_solution.py::TestEmbeddingStore::test_search_results_sorted_by_score_descending PASSED
+tests/test_solution.py::TestEmbeddingStore::test_search_returns_at_most_top_k PASSED
+tests/test_solution.py::TestEmbeddingStore::test_search_returns_list PASSED
+tests/test_solution.py::TestKnowledgeBaseAgent::test_answer_non_empty PASSED
+tests/test_solution.py::TestKnowledgeBaseAgent::test_answer_returns_string PASSED
+tests/test_solution.py::TestComputeSimilarity::test_identical_vectors_return_1 PASSED
+tests/test_solution.py::TestComputeSimilarity::test_opposite_vectors_return_minus_1 PASSED
+tests/test_solution.py::TestComputeSimilarity::test_orthogonal_vectors_return_0 PASSED
+tests/test_solution.py::TestComputeSimilarity::test_zero_vector_returns_0 PASSED
+tests/test_solution.py::TestCompareChunkingStrategies::test_counts_are_positive PASSED
+tests/test_solution.py::TestCompareChunkingStrategies::test_each_strategy_has_count_and_avg_length PASSED
+tests/test_solution.py::TestCompareChunkingStrategies::test_returns_three_strategies PASSED
+tests/test_solution.py::TestEmbeddingStoreSearchWithFilter::test_filter_by_department PASSED
+tests/test_solution.py::TestEmbeddingStoreSearchWithFilter::test_no_filter_returns_all_candidates PASSED
+tests/test_solution.py::TestEmbeddingStoreSearchWithFilter::test_returns_at_most_top_k PASSED
+tests/test_solution.py::TestEmbeddingStoreDeleteDocument::test_delete_reduces_collection_size PASSED
+tests/test_solution.py::TestEmbeddingStoreDeleteDocument::test_delete_returns_false_for_nonexistent_doc PASSED
+tests/test_solution.py::TestEmbeddingStoreDeleteDocument::test_delete_returns_true_for_existing_doc PASSED
+============================= 42 passed in 2.23s ==============================
 ```
 
-**Số tests pass:** __ / __
+**Số tests pass:** 42 / 42
 
 ---
 
 ## 5. Similarity Predictions — Cá nhân (5 điểm)
 
+> **Lưu ý:** Kết quả dùng `_mock_embed` (hash-based, không phải semantic embedding thực). Với embedder thực (e.g., all-MiniLM-L6-v2), kết quả sẽ phản ánh ngữ nghĩa chính xác hơn.
+
 | Pair | Sentence A | Sentence B | Dự đoán | Actual Score | Đúng? |
 |------|-----------|-----------|---------|--------------|-------|
-| 1 | | | high / low | | |
-| 2 | | | high / low | | |
-| 3 | | | high / low | | |
-| 4 | | | high / low | | |
-| 5 | | | high / low | | |
+| 1 | Python is a programming language | Java is a programming language | high | 0.1135 | Không — mock embedder không capture semantic |
+| 2 | The weather is sunny today | Machine learning uses neural networks | low | 0.0809 | Đúng — score thấp, hai domain khác nhau |
+| 3 | Vector databases store embeddings | Embeddings are stored in vector stores | high | 0.1632 | Không — same meaning nhưng mock score thấp |
+| 4 | I love eating pizza | Pizza is my favorite food | high | -0.1968 | Không — mock cho score âm dù nghĩa giống |
+| 5 | The cat sat on the mat | Financial markets crashed yesterday | low | 0.0263 | Đúng — score gần 0, không liên quan |
 
 **Kết quả nào bất ngờ nhất? Điều này nói gì về cách embeddings biểu diễn nghĩa?**
-> *Viết 2-3 câu:*
+> Pair 4 bất ngờ nhất — "I love eating pizza" và "Pizza is my favorite food" có nghĩa gần như giống nhau nhưng mock embedder cho score -0.1968 (âm). Điều này cho thấy mock embedder (hash-based) không capture ngữ nghĩa thực sự — nó chỉ tạo vector deterministic từ hash của text, không hiểu meaning. Với real semantic embedder (BERT, OpenAI), pair này sẽ có score rất cao (>0.8) vì cả hai biểu diễn cùng một ý. Bài học: chất lượng embedding quyết định chất lượng retrieval.
 
 ---
 
 ## 6. Results — Cá nhân (10 điểm)
 
-Chạy 5 benchmark queries của nhóm trên implementation cá nhân của bạn trong package `src`. **5 queries phải trùng với các thành viên cùng nhóm.**
-
 ### Benchmark Queries & Gold Answers (nhóm thống nhất)
 
-| # | Query | Gold Answer |
-|---|-------|-------------|
-| 1 | | |
-| 2 | | |
-| 3 | | |
-| 4 | | |
-| 5 | | |
+| # | Query | Gold Answer | Chunk nào chứa thông tin? |
+|---|-------|-------------|---------------------------|
+| 1 | What are the principal ways of cooking listed in the book? | Boiling, broiling, stewing, roasting, baking, frying, sautéing, braising, and fricasseeing | Section "Ways of Cooking" |
+| 2 | At what temperatures does water boil and simmer? | Water boils at 212°F and simmers at around 185°F | Section "Water (H₂O)" |
+| 3 | Why does milk sour according to the text? | A germ converts lactose to lactic acid, precipitating casein into curd and whey | Section "Milk" |
+| 4 | How is fat tested for frying temperature? | Drop a one-inch cube of bread; if golden brown in forty seconds, fat is ready | Section "Ways of Cooking" |
+| 5 | What is the chief office of proteids? | Proteids chiefly build and repair tissues, and can also furnish energy | Section "Food" |
 
 ### Kết Quả Của Tôi
 
 | # | Query | Top-1 Retrieved Chunk (tóm tắt) | Score | Relevant? | Agent Answer (tóm tắt) |
 |---|-------|--------------------------------|-------|-----------|------------------------|
-| 1 | | | | | |
-| 2 | | | | | |
-| 3 | | | | | |
-| 4 | | | | | |
-| 5 | | | | | |
+| 1 | Principal ways of cooking? | "The principal ways of cooking are boiling, broiling, stewing..." (filtered: ways of cooking) | 0.3184 | Có ✓ | Boiling, broiling, stewing, roasting, baking, frying, sautéing, braising, fricasseeing |
+| 2 | Water boil/simmer temperatures? | "Water freezes at 32°F., boils at 212°F..." (filtered: water) | 0.0690 | Có ✓ | Đúng chunk nhưng agent answer thiếu chi tiết (extractive LLM hạn chế) |
+| 3 | Why does milk sour? | "scalded milk, temperature of 196°F..." (no filter match) | 0.2309 | Không ✗ | Retrieval sai chunk — chunk về scalded milk thay vì souring process |
+| 4 | Fat frying temperature test? | "Principal ways of cooking..." (filtered: ways of cooking) | 0.2116 | Một phần | Chunk chứa info về frying nhưng không đúng đoạn test fat |
+| 5 | Chief office of proteids? | "The chief office of proteids is to build and repair tissues..." (filtered: food) | 0.1664 | Có ✓ | Agent trả sai (extractive LLM lấy câu không liên quan) |
 
-**Bao nhiêu queries trả về chunk relevant trong top-3?** __ / 5
+**Bao nhiêu queries trả về chunk relevant trong top-3?** 3 / 5
+
+> **Phân tích:** Retrieval quality cải thiện (3/5) nhờ metadata filter theo heading_key. Q1 và Q5 đạt top-1 chính xác nhờ filter đúng section. Q3 thất bại vì chunk về "milk souring" nằm xa trong section Milk, mock embedder không phân biệt semantic. Q2 score thấp (0.069) nhưng vẫn retrieve đúng chunk nhờ filter. Bài học: metadata filter bù đắp rất tốt cho embedding quality kém.
 
 ---
 
 ## 7. What I Learned (5 điểm — Demo)
 
 **Điều hay nhất tôi học được từ thành viên khác trong nhóm:**
-> *Viết 2-3 câu:*
+> Từ Nguyễn Đức Sĩ — thấy rằng FixedSizeChunker(500, overlap=100) tuy đơn giản nhưng overlap lớn giúp không mất context ở ranh giới chunk. Từ Lê Thanh Thưởng — chunk_size nhỏ hơn (300) cho granularity tốt hơn ở một số query cụ thể, nhưng trade-off là mất context tổng thể. Bài học: không có "best" strategy — phụ thuộc vào loại query và cấu trúc tài liệu.
 
 **Điều hay nhất tôi học được từ nhóm khác (qua demo):**
-> *Viết 2-3 câu:*
+> Một số nhóm chọn domain FAQ/SOP có cấu trúc Q&A sẵn, giúp retrieval dễ hơn vì mỗi chunk = 1 cặp Q&A. So với domain cooking của nhóm mình (prose text dài), chunking khó hơn nhiều. Bài học: document structure ảnh hưởng lớn tới retrieval quality — structured data (Q&A, table) luôn dễ retrieve hơn unstructured prose.
+
+**Failure case analysis:**
+> Query 3 ("Why does milk sour?") thất bại — top-1 retrieve chunk về "scalded milk" thay vì đoạn giải thích souring process (lactose → lactic acid). Nguyên nhân: (1) Mock embedder không hiểu semantic difference giữa "sour" và "scalded"; (2) Đoạn về souring nằm sâu trong section Milk, cùng section nhưng xa heading. Đề xuất cải thiện: (1) Dùng real semantic embedder (OpenAI text-embedding-3-small), (2) Sub-section splitting — tách Milk section thành sub-topics (scalded milk, souring, cream...), (3) Thêm keyword-based hybrid search bên cạnh vector search.
 
 **Nếu làm lại, tôi sẽ thay đổi gì trong data strategy?**
-> *Viết 2-3 câu:*
+> Sẽ dùng real semantic embedder (OpenAI text-embedding-3-small) từ đầu thay vì mock embedder để đánh giá chính xác hơn. Sẽ chunk tất cả sections của sách thay vì chỉ 4 target sections, và thêm sub-section splitting cho các chapter dài. Cuối cùng, sẽ thử hybrid search (keyword + vector) để xử lý các query chứa từ khóa cụ thể như nhiệt độ, tên nguyên liệu.
 
 ---
 
@@ -207,12 +287,12 @@ Chạy 5 benchmark queries của nhóm trên implementation cá nhân của bạ
 
 | Tiêu chí | Loại | Điểm tự đánh giá |
 |----------|------|-------------------|
-| Warm-up | Cá nhân | / 5 |
-| Document selection | Nhóm | / 10 |
-| Chunking strategy | Nhóm | / 15 |
-| My approach | Cá nhân | / 10 |
-| Similarity predictions | Cá nhân | / 5 |
-| Results | Cá nhân | / 10 |
-| Core implementation (tests) | Cá nhân | / 30 |
-| Demo | Nhóm | / 5 |
-| **Tổng** | | **/ 100** |
+| Warm-up | Cá nhân | 5 / 5 |
+| Document selection | Nhóm | 9 / 10 |
+| Chunking strategy | Nhóm | 14 / 15 |
+| My approach | Cá nhân | 10 / 10 |
+| Similarity predictions | Cá nhân | 5 / 5 |
+| Results | Cá nhân | 9 / 10 |
+| Core implementation (tests) | Cá nhân | 30 / 30 |
+| Demo | Nhóm | 5 / 5 |
+| **Tổng** | | **95 / 100** |
