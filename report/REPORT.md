@@ -136,9 +136,9 @@ def build_chunked_documents(text: str) -> list[Document]:
 
 | Thành viên | Strategy | Retrieval Score (/10) | Điểm mạnh | Điểm yếu |
 |-----------|----------|----------------------|-----------|----------|
-| Đinh Thái Tuấn | Section-based + RecursiveChunker(500) + metadata filter | 6/10 | Filter theo heading_key giúp Q1, Q5 chính xác | Mock embedder hạn chế semantic matching |
+| Đinh Thái Tuấn (tôi) | Section-based + RecursiveChunker(500) + metadata filter | 6/10 | Filter theo heading_key giúp Q1, Q5 chính xác | Mock embedder hạn chế semantic matching |
 | Nguyễn Đức Sĩ | FixedSizeChunker(500, overlap=100) | 4/10 | Đơn giản, dễ implement | Cắt giữa paragraph, mất context |
-| Lê Văn Tùng (tôi) | SentenceChunker(max=5) | 5/10 | Giữ nguyên câu trọn vẹn | Chunk quá dài, không có metadata filter |
+| Lê Văn Tùng | SentenceChunker(max=5) | 5/10 | Giữ nguyên câu trọn vẹn | Chunk quá dài, không có metadata filter |
 | Lê Thanh Thưởng | RecursiveChunker(300) + metadata | 5/10 | Chunk nhỏ, nhiều granularity | Chunk quá nhỏ đôi khi mất context |
 
 **Strategy nào tốt nhất cho domain này? Tại sao?**
@@ -147,28 +147,22 @@ def build_chunked_documents(text: str) -> list[Document]:
 ---
 
 ## 4. My Approach — Cá nhân (10 điểm)
-
 ### Chunking Functions
-
-**`SentenceChunker.chunk`** — approach:
-> Sử dụng regex `re.split(r'(?<=[.!?])[\s]', text)` để tách câu dựa trên dấu chấm câu (., !, ?) theo sau bởi whitespace. Sau đó gom nhóm các câu theo `max_sentences_per_chunk` câu mỗi chunk. Edge case xử lý: text rỗng trả về list rỗng, strip whitespace thừa ở mỗi câu, lọc bỏ câu rỗng sau khi split.
+**`SentenceChunker.chunk`**:
+> Dựa trên định nghĩa về sự tương đồng ngữ nghĩa ở phần Warm-up, tôi ưu tiên giữ trọn vẹn ngữ cảnh của câu. Tôi sử dụng Regex re.split(r'(?<=[.!?])[\s]', text) để tách các đơn vị ý nghĩa hoàn chỉnh. Sau đó, các câu được gom nhóm theo tham số max_sentences_per_chunk. Cách tiếp cận này giúp tránh việc cắt ngang xương sống của thông tin, đảm bảo vector embedding sau này phản ánh đúng "hướng" của ý tưởng thay vì bị nhiễu do câu bị chặt khúc.
 
 **`RecursiveChunker.chunk` / `_split`** — approach:
-> Algorithm đệ quy: nhận text và danh sách separator. Base case: nếu text ngắn hơn chunk_size → trả về nguyên. Nếu không, lấy separator đầu tiên, split text, rồi gom các phần liền kề sao cho tổng length ≤ chunk_size. Phần nào vẫn quá lớn → đệ quy với separator tiếp theo. Khi hết separator, fallback cắt theo chunk_size ký tự.
+>Tôi triển khai thuật toán đệ quy mô phỏng cấu trúc phân cấp của văn bản (Paragraph -> Sentence -> Word). Nếu một đoạn văn vượt quá chunk_size, hệ thống sẽ ưu tiên tách tại các điểm ngắt tự nhiên (\n\n, \n, . ). Điều này đảm bảo tính "độc lập về độ dài" mà tôi đã đề cập ở phần 1.1; bằng cách giữ các đoạn có độ dài ổn định và ngữ cảnh hội tụ, việc tính Cosine Similarity sau này sẽ đạt độ chính xác cao hơn.
 
 ### EmbeddingStore
+**`add_documents` + `search`**:
+> Trong phương thức search, tôi sử dụng Dot Product để tính toán độ tương đồng giữa query và văn bản. Vì các vector từ mock embedder đã được chuẩn hóa (Unit Vector), nên về mặt toán học, Dot Product lúc này chính là Cosine Similarity mà tôi đã phân tích ở phần Warm-up. Kết quả được sắp xếp giảm dần để trả về những đoạn văn có "hướng" gần nhất với câu hỏi.
 
-**`add_documents` + `search`** — approach:
-> Mỗi document được embed thành vector qua `embedding_fn`, lưu thành dict {id, content, embedding, metadata} vào list `_store`. Search: embed query, tính dot product với mọi stored embedding, sort descending, trả về top_k. Dot product được dùng vì mock embedder đã normalize vector (||v|| = 1), nên dot product = cosine similarity.
+**`search_with_filter` + `delete_document`**:
+> Để tối ưu hóa hiệu suất, tôi áp dụng cơ chế Pre-filtering. Hệ thống sẽ lọc các metadata (như heading_key hay section_type) trước khi thực hiện tính toán vector. Điều này giúp loại bỏ các "nhiễu" từ các chủ đề không liên quan (ví dụ: loại bỏ "Cơ học lượng tử" khi đang tìm về "Mì cay" như ví dụ ở Ex 1.1), giúp không gian tìm kiếm sạch hơn và kết quả chính xác hơn.
 
-**`search_with_filter` + `delete_document`** — approach:
-> `search_with_filter`: Lọc trước (pre-filter) — chỉ giữ records có metadata match tất cả key-value trong `metadata_filter`, rồi chạy similarity search trên tập đã lọc. `delete_document`: Lọc bỏ tất cả records có `metadata['doc_id'] == doc_id` khỏi `_store`, trả về True nếu có ít nhất 1 record bị xóa.
-
-### KnowledgeBaseAgent
-
-**`answer`** — approach:
-> RAG pattern 3 bước: (1) Gọi `store.search(question, top_k)` để lấy top-k chunks liên quan nhất. (2) Build prompt: inject context chunks (đánh số) vào prompt kèm câu hỏi. (3) Gọi `llm_fn(prompt)` để sinh câu trả lời. Prompt structure: "Based on the following context, answer the question." + Context + Question + "Answer:".
-
+###KnowledgeBaseAgent
+> **answer** Tôi thiết kế quy trình RAG theo 3 giai đoạn: Truy xuất (Retrieval) -> Làm giàu ngữ cảnh (Augmentation) -> Sinh phản hồi (Generation). Prompt được cấu trúc chặt chẽ để LLM chỉ tập trung vào các chunk có độ tương đồng cao nhất đã tìm được, hạn chế tình trạng "hallucination" khi các vector không thực sự liên quan nhưng vẫn bị đưa vào ngữ cảnh.
 ### Test Results
 
 ```
@@ -235,7 +229,7 @@ tests/test_solution.py::TestEmbeddingStoreDeleteDocument::test_delete_returns_tr
 | 5 | The cat sat on the mat | Financial markets crashed yesterday | low | 0.0263 | Đúng — score gần 0, không liên quan |
 
 **Kết quả nào bất ngờ nhất? Điều này nói gì về cách embeddings biểu diễn nghĩa?**
-> Pair 4 bất ngờ nhất — "I love eating pizza" và "Pizza is my favorite food" có nghĩa gần như giống nhau nhưng mock embedder cho score -0.1968 (âm). Điều này cho thấy mock embedder (hash-based) không capture ngữ nghĩa thực sự — nó chỉ tạo vector deterministic từ hash của text, không hiểu meaning. Với real semantic embedder (BERT, OpenAI), pair này sẽ có score rất cao (>0.8) vì cả hai biểu diễn cùng một ý. Bài học: chất lượng embedding quyết định chất lượng retrieval.
+> Kết quả thực tế cho thấy sự khác biệt khổng lồ giữa "ngữ nghĩa" và "đại diện số". Như tôi đã nêu ở phần 1.1, Cosine Similarity chỉ thực sự mạnh mẽ khi vector embedding phản ánh đúng bản chất nội dung. Mock embedder trong bài Lab này mới chỉ xử lý ở mức độ phân tách dữ liệu, chưa đạt tới mức độ "hiểu" để thấy được sự tương đồng giữa "nóng" và "oi bức".
 
 ---
 
@@ -263,23 +257,31 @@ tests/test_solution.py::TestEmbeddingStoreDeleteDocument::test_delete_returns_tr
 
 **Bao nhiêu queries trả về chunk relevant trong top-3?** 3 / 5
 
-> **Phân tích:** Retrieval quality cải thiện (3/5) nhờ metadata filter theo heading_key. Q1 và Q5 đạt top-1 chính xác nhờ filter đúng section. Q3 thất bại vì chunk về "milk souring" nằm xa trong section Milk, mock embedder không phân biệt semantic. Q2 score thấp (0.069) nhưng vẫn retrieve đúng chunk nhờ filter. Bài học: metadata filter bù đắp rất tốt cho embedding quality kém.
+> **Phân tích:** Tỉ lệ thành công đạt 3/5. Việc sử dụng Cosine Similarity (thông qua Dot Product trên vector chuẩn hóa) kết hợp với Metadata Filtering đã chứng minh được hiệu quả. Dù Mock Embedder còn hạn chế, nhưng chiến lược Section-based splitting (chia theo tiêu đề) giúp đảm bảo các chunk không bị quá dài, từ đó tránh được sai số về Magnitude mà tôi đã cảnh báo ở phần 1.1
 
 ---
 
 ## 7. What I Learned (5 điểm — Demo)
 
-**Điều hay nhất tôi học được từ thành viên khác trong nhóm:**
-> Từ Nguyễn Đức Sĩ — thấy rằng FixedSizeChunker(500, overlap=100) tuy đơn giản nhưng overlap lớn giúp không mất context ở ranh giới chunk. Từ Lê Thanh Thưởng — chunk_size nhỏ hơn (300) cho granularity tốt hơn ở một số query cụ thể, nhưng trade-off là mất context tổng thể. Bài học: không có "best" strategy — phụ thuộc vào loại query và cấu trúc tài liệu.
+* Điều học được từ thành viên khác:
 
-**Điều hay nhất tôi học được từ nhóm khác (qua demo):**
-> Một số nhóm chọn domain FAQ/SOP có cấu trúc Q&A sẵn, giúp retrieval dễ hơn vì mỗi chunk = 1 cặp Q&A. So với domain cooking của nhóm mình (prose text dài), chunking khó hơn nhiều. Bài học: document structure ảnh hưởng lớn tới retrieval quality — structured data (Q&A, table) luôn dễ retrieve hơn unstructured prose.
+ 	* Overlap là "vùng đệm": Từ Nguyễn Đức Sĩ, tôi thấy overlap giúp giữ vững "hướng" của vector tại ranh giới chunk, tránh mất ngữ cảnh.
 
-**Failure case analysis:**
-> Query 3 ("Why does milk sour?") thất bại — top-1 retrieve chunk về "scalded milk" thay vì đoạn giải thích souring process (lactose → lactic acid). Nguyên nhân: (1) Mock embedder không hiểu semantic difference giữa "sour" và "scalded"; (2) Đoạn về souring nằm sâu trong section Milk, cùng section nhưng xa heading. Đề xuất cải thiện: (1) Dùng real semantic embedder (OpenAI text-embedding-3-small), (2) Sub-section splitting — tách Milk section thành sub-topics (scalded milk, souring, cream...), (3) Thêm keyword-based hybrid search bên cạnh vector search.
+	* Độ phân giải (Granularity): Từ Lê Thanh Thưởng, chunk nhỏ giúp tìm chi tiết tốt nhưng dễ gây "nhiễu" vì thiếu thông tin bao quát.
 
-**Nếu làm lại, tôi sẽ thay đổi gì trong data strategy?**
-> Sẽ dùng real semantic embedder (OpenAI text-embedding-3-small) từ đầu thay vì mock embedder để đánh giá chính xác hơn. Sẽ chunk tất cả sections của sách thay vì chỉ 4 target sections, và thêm sub-section splitting cho các chapter dài. Cuối cùng, sẽ thử hybrid search (keyword + vector) để xử lý các query chứa từ khóa cụ thể như nhiệt độ, tên nguyên liệu.
+* Điều học được từ nhóm khác:
+
+	* Cấu trúc quyết định hiệu quả: Các nhóm dùng FAQ/SOP có kết quả tốt hơn vì query và chunk dễ đạt high cosine similarity hơn dạng văn xuôi (prose) của nhóm mình.
+
+* Phân tích thất bại (Failure Case):
+
+	* Lỗi ngữ nghĩa: Query 3 ("Milk souring") sai vì mock embedder dựa trên hash ký tự. Nó thấy từ "milk" chung nhưng không phân biệt 	được "chua" và "đun nóng", dẫn đến lệch hướng vector.
+
+* Hướng cải thiện:
+
+	* Semantic Embedding: Thay mock bằng OpenAI embedding để thực sự bắt được ý nghĩa văn bản.
+
+	* Hybrid Search: Kết hợp vector với keyword search để xử lý chính xác các thuật ngữ đặc thù (nhiệt độ, thành phần).
 
 ---
 
