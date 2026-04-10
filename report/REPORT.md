@@ -139,7 +139,7 @@ def build_chunked_documents(text: str) -> list[Document]:
 | Đinh Thái Tuấn | Section-based + RecursiveChunker(500) + metadata filter | 6/10 | Filter theo heading_key giúp Q1, Q5 chính xác | Mock embedder hạn chế semantic matching |
 | Nguyễn Đức Sĩ | FixedSizeChunker(500, overlap=100) | 4/10 | Đơn giản, dễ implement | Cắt giữa paragraph, mất context |
 | Lê Văn Tùng (tôi)| RecursiveChunker(300) | 5/10 | Giữ nguyên câu trọn vẹn | không có metadata filter |
-| Lê Thanh Thưởng | RecursiveChunker(300) + metadata | 5/10 | Chunk nhỏ, nhiều granularity | Chunk quá nhỏ đôi khi mất context |
+| Lê Thanh Thưởng | SentenceChunker(max=5) + metadata filter| 6 / 10 | Chunk coherent, dễ kiểm chứng | Một số lỗi do data split (Milk) + heuristic answer bị cắt |
 
 **Strategy nào tốt nhất cho domain này? Tại sao?**
 > Section-based + RecursiveChunker cho kết quả tốt nhất trên domain cookbook vì tận dụng cấu trúc heading sẵn có của Markdown. Metadata filter (heading_key) giúp thu hẹp vùng tìm kiếm đáng kể — thay vì search 857 chunks, chỉ cần search 5-10 chunks trong đúng section. Tuy nhiên, với real embedder (OpenAI), gap giữa các strategy sẽ nhỏ hơn vì semantic search bù đắp cho chunking kém.
