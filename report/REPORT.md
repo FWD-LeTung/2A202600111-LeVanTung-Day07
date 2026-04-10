@@ -136,9 +136,9 @@ def build_chunked_documents(text: str) -> list[Document]:
 
 | Thành viên | Strategy | Retrieval Score (/10) | Điểm mạnh | Điểm yếu |
 |-----------|----------|----------------------|-----------|----------|
-| Đinh Thái Tuấn (tôi) | Section-based + RecursiveChunker(500) + metadata filter | 6/10 | Filter theo heading_key giúp Q1, Q5 chính xác | Mock embedder hạn chế semantic matching |
+| Đinh Thái Tuấn | Section-based + RecursiveChunker(500) + metadata filter | 6/10 | Filter theo heading_key giúp Q1, Q5 chính xác | Mock embedder hạn chế semantic matching |
 | Nguyễn Đức Sĩ | FixedSizeChunker(500, overlap=100) | 4/10 | Đơn giản, dễ implement | Cắt giữa paragraph, mất context |
-| Lê Văn Tùng | SentenceChunker(max=5) | 5/10 | Giữ nguyên câu trọn vẹn | Chunk quá dài, không có metadata filter |
+| Lê Văn Tùng (tôi)| SentenceChunker(max=5) | 5/10 | Giữ nguyên câu trọn vẹn | Chunk quá dài, không có metadata filter |
 | Lê Thanh Thưởng | RecursiveChunker(300) + metadata | 5/10 | Chunk nhỏ, nhiều granularity | Chunk quá nhỏ đôi khi mất context |
 
 **Strategy nào tốt nhất cho domain này? Tại sao?**
