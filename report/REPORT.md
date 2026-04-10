@@ -138,7 +138,7 @@ def build_chunked_documents(text: str) -> list[Document]:
 |-----------|----------|----------------------|-----------|----------|
 | Đinh Thái Tuấn | Section-based + RecursiveChunker(500) + metadata filter | 6/10 | Filter theo heading_key giúp Q1, Q5 chính xác | Mock embedder hạn chế semantic matching |
 | Nguyễn Đức Sĩ | FixedSizeChunker(500, overlap=100) | 4/10 | Đơn giản, dễ implement | Cắt giữa paragraph, mất context |
-| Lê Văn Tùng (tôi)| SentenceChunker(max=5) | 5/10 | Giữ nguyên câu trọn vẹn | Chunk quá dài, không có metadata filter |
+| Lê Văn Tùng (tôi)| RecursiveChunker(300) | 5/10 | Giữ nguyên câu trọn vẹn | không có metadata filter |
 | Lê Thanh Thưởng | RecursiveChunker(300) + metadata | 5/10 | Chunk nhỏ, nhiều granularity | Chunk quá nhỏ đôi khi mất context |
 
 **Strategy nào tốt nhất cho domain này? Tại sao?**
@@ -148,8 +148,6 @@ def build_chunked_documents(text: str) -> list[Document]:
 
 ## 4. My Approach — Cá nhân (10 điểm)
 ### Chunking Functions
-**`SentenceChunker.chunk`**:
-> Dựa trên định nghĩa về sự tương đồng ngữ nghĩa ở phần Warm-up, tôi ưu tiên giữ trọn vẹn ngữ cảnh của câu. Tôi sử dụng Regex re.split(r'(?<=[.!?])[\s]', text) để tách các đơn vị ý nghĩa hoàn chỉnh. Sau đó, các câu được gom nhóm theo tham số max_sentences_per_chunk. Cách tiếp cận này giúp tránh việc cắt ngang xương sống của thông tin, đảm bảo vector embedding sau này phản ánh đúng "hướng" của ý tưởng thay vì bị nhiễu do câu bị chặt khúc.
 
 **`RecursiveChunker.chunk` / `_split`** — approach:
 >Tôi triển khai thuật toán đệ quy mô phỏng cấu trúc phân cấp của văn bản (Paragraph -> Sentence -> Word). Nếu một đoạn văn vượt quá chunk_size, hệ thống sẽ ưu tiên tách tại các điểm ngắt tự nhiên (\n\n, \n, . ). Điều này đảm bảo tính "độc lập về độ dài" mà tôi đã đề cập ở phần 1.1; bằng cách giữ các đoạn có độ dài ổn định và ngữ cảnh hội tụ, việc tính Cosine Similarity sau này sẽ đạt độ chính xác cao hơn.
